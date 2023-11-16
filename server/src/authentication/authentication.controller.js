@@ -9,12 +9,13 @@ const {
 
 const { generateToken } = require("./authentication.service");
 
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 const jwt = require("jsonwebtoken");
 
 const transporter = require("../../../Providers/Nodemailer");
 
+require("dotenv").config();
 const {
   generateVerificationCode,
 } = require("../../../Providers/generate_code_reset_password");
@@ -166,7 +167,7 @@ const loginController = async (req, res) => {
 
 const sending_verif_email = async (toEmail) => {
   try {
-    const token = jwt.sign({ email: toEmail }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ email: toEmail }, "f34f714b45834e9586924c764354e1235f6789ab0cd1ef20314567890abcdef", {
       expiresIn: "15m",
     });
 
@@ -189,7 +190,7 @@ const sending_verif_email = async (toEmail) => {
 const verify_email = async (req, res) => {
   const { token } = req.query;
   const { actual_email } = req.body;
-  jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+  jwt.verify(token, "f34f714b45834e9586924c764354e1235f6789ab0cd1ef20314567890abcdef", async (err, decoded) => {
     if (err) {
       console.error(`JWT verification failed: ${err.message}`);
       return res
