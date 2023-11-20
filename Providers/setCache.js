@@ -8,5 +8,5 @@ module.exports = {
 
   getCache: (key) => {
     return myCache.get(key);
-  }
+  },
 };

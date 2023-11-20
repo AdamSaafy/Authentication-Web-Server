@@ -7,6 +7,8 @@ const {
   updatePasswordService
 } = require("../user/user.service");
 
+const { OAuth2Client } = require('google-auth-library');
+
 const { generateToken } = require("./authentication.service");
 
 const bcrypt = require("bcryptjs");
@@ -14,7 +16,6 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const transporter = require("../../../Providers/Nodemailer");
-
 require("dotenv").config();
 const {
   generateVerificationCode,
@@ -26,6 +27,90 @@ const {
 } = require("../../../Providers/store_in_cache");
 
 const {setCache , getCache} = require ('../../../Providers/setCache');
+
+
+const loginWGController = async (req, res) => {
+  try {
+    const { googleToken } = req.body;
+
+    const YOUR_GOOGLE_CLIENT_ID = '992642187010-r9ken3t1skjsbp3adrel4lal14725b97.apps.googleusercontent.com';
+    const client = new OAuth2Client(YOUR_GOOGLE_CLIENT_ID);
+
+    // Function to verify the Google token
+    const verifyGoogleToken = async (idToken) => {
+      try {
+        const ticket = await client.verifyIdToken({
+          idToken,
+          audience: YOUR_GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        return payload;
+      } catch (error) {
+        console.error('Error verifying Google token:', error);
+        throw error;
+      }
+    };
+
+    // Verify and decode the Google token
+    const decodedPayload = await verifyGoogleToken(googleToken);
+    console.log('Decoded Google Token Payload:', decodedPayload);
+
+    const existingUser = await getUserByEmailAndPasswordService(decodedPayload.email);
+
+    if (existingUser) {
+      // User exists, log in the user or perform any other actions
+      // For example, generate and send a JWT token for authentication
+      const token = generateToken({
+        id: existingUser.idUser,
+        email: existingUser.email,
+      }, '1d');
+      setCache('token', token);
+      res.status(200).json({ success: true, message: "User logged in successfully", token });
+    } else {
+      const generateRandomPassword = () => {
+        const length = 10;
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let password = "";
+        for (let i = 0; i < length; i++) {
+          const randomIndex = Math.floor(Math.random() * charset.length);
+          password += charset.charAt(randomIndex);
+        }
+        return password;
+      };
+      // User does not exist, register the user using the credentials from the token
+      
+      // Generate a random password
+      const password = generateRandomPassword();
+      
+      const { email, name, family_name , picture } = decodedPayload;
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 13);
+
+      // Perform your registration logic here
+      const result = await addUserService({
+        email,
+        password: hashedPassword,
+        name,
+        surname : decodedPayload.family_name ,
+      });
+
+      // After registration, you can generate a JWT token and send it as a response
+      const token = generateToken({
+        id: result.insertId,
+        email,
+      }, '1d');
+
+      res.status(200).json({ success: true, message: "User registered successfully", token });
+    }
+  } catch (error) {
+    console.error('Error handling Google token:', error);
+    res.status(400).json({ success: false, message: 'Invalid Google token. Please try again.' });
+  }
+};
+
+
+
 
 const registerController = async (req, res) => {
   try {
@@ -300,5 +385,6 @@ module.exports = {
   verify_email,
   forget_password,
   verify_check_code_password,
-  updatePasswordController
+  updatePasswordController,
+  loginWGController
 };
