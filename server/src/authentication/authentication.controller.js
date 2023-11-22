@@ -60,7 +60,6 @@ const loginWGController = async (req, res) => {
 
     if (existingUser) {
       // User exists, log in the user or perform any other actions
-      // For example, generate and send a JWT token for authentication
       const token = generateToken(
         {
           id: existingUser.idUser,
@@ -74,7 +73,6 @@ const loginWGController = async (req, res) => {
         .json({ success: true, message: "User logged in successfully", token });
     } else {
       // Generate a random password
-
       const generateRandomPassword = () => {
         const length = 10;
         const charset =
@@ -86,13 +84,10 @@ const loginWGController = async (req, res) => {
         }
         return password;
       };
-
       const password = generateRandomPassword();
-
       const { email, name, family_name, picture } = decodedPayload;
       // Hash the password
       const hashedPassword = await bcrypt.hash(password, 13);
-
       // Perform your registration logic here
       const result = await addUserService({
         email,
