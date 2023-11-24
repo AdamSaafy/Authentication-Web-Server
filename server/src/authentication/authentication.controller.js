@@ -207,7 +207,7 @@ const loginController = async (req, res) => {
     } else {
       bcrypt.compare(
         password,
-        hashpassword[0].password,
+        hashpassword.password,
         async function (err, result) {
           if (result) {
             try {
@@ -215,15 +215,15 @@ const loginController = async (req, res) => {
               if (result.length) {
                 const token = generateToken(
                   {
-                    id: hashpassword[0].idUser,
-                    email: hashpassword[0].email,
+                    id: hashpassword.idUser,
+                    email: hashpassword.email,
                   },
                   "1d"
                 );
                 const refreshtoken = generateToken(
                   {
-                    id: hashpassword[0].idUser,
-                    email: hashpassword[0].email,
+                    id: hashpassword.idUser,
+                    email: hashpassword.email,
                   },
                   "1d"
                 );
